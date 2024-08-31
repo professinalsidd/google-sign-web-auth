@@ -2,11 +2,21 @@ import React, { useState, useEffect } from "react";
 import { googleLogout, useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 
-const App = () => {
-  const [user, setUser] = useState<any>([]);
-  const [profile, setProfile] = useState<any>([]);
+interface User {
+  access_token: string;
+}
 
-  const login: any = useGoogleLogin({
+interface Profile {
+  name: string;
+  email: string;
+  picture: string;
+}
+
+const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const login = useGoogleLogin({
     onSuccess: (codeResponse) => setUser(codeResponse),
     onError: (error) => console.log("Login Failed:", error),
   });
@@ -14,7 +24,7 @@ const App = () => {
   useEffect(() => {
     if (user) {
       axios
-        .get(
+        .get<Profile>(
           `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`,
           {
             headers: {
@@ -23,10 +33,7 @@ const App = () => {
             },
           }
         )
-        .then((res) => {
-          console.log("res", res);
-          setProfile(res?.data);
-        })
+        .then((res) => setProfile(res.data))
         .catch((err) => console.log(err));
     }
   }, [user]);
@@ -35,24 +42,31 @@ const App = () => {
     googleLogout();
     setProfile(null);
   };
+
   return (
-    <div>
+    <div className="app-container">
       <h2>React Google Login</h2>
-      <br />
-      <br />
-      {profile ? (
-        <div>
-          <img src={profile?.picture} alt="user image" />
-          <h3>User Logged in</h3>
-          <p>Name: {profile?.name}</p>
-          <p>Email Address: {profile?.email}</p>
-          <br />
-          <br />
-          <button onClick={logOut}>Log out</button>
-        </div>
-      ) : (
-        <button onClick={() => login()}>Sign in with Google 🚀 </button>
-      )}
+      <div className="content">
+        {profile ? (
+          <div className="profile">
+            <img src={profile.picture} alt="User" className="profile-picture" />
+            <h3>User Logged In</h3>
+            <p>
+              <strong>Name:</strong> {profile.name}
+            </p>
+            <p>
+              <strong>Email Address:</strong> {profile.email}
+            </p>
+            <button onClick={logOut} className="logout-button">
+              Log Out
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => login()} className="login-button">
+            Sign in with Google 🚀
+          </button>
+        )}
+      </div>
     </div>
   );
 };
